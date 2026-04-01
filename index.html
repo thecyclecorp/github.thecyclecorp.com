@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VTurb Downloader</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      padding: 2rem 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.4rem;
+    }
+
+    header h1 span { color: #6c5ce7; }
+
+    header p {
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-group input {
+      flex: 1;
+      padding: 0.85rem 1rem;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      background: #12121a;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-group input:focus { border-color: #6c5ce7; }
+    .input-group input::placeholder { color: #555; }
+
+    .btn-primary {
+      padding: 0.85rem 1.5rem;
+      border: none;
+      border-radius: 10px;
+      background: #6c5ce7;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover { background: #5a4bd1; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-sm {
+      padding: 0.55rem 1rem;
+      font-size: 0.8rem;
+      border-radius: 8px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.8rem 1rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .status.hidden { display: none; }
+    .status.loading { background: #1a1a2e; color: #a0a0ff; }
+    .status.success { background: #0a2a1a; color: #4ade80; }
+    .status.error { background: #2a0a0a; color: #f87171; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #resultSection {
+      border-radius: 14px;
+    }
+
+    #resultSection.hidden { display: none; }
+
+    /* ── Single video view ── */
+    #singleVideoSection {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 14px;
+      padding: 1.5rem;
+    }
+
+    #singleVideoSection.hidden { display: none; }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #000;
+      margin-bottom: 1rem;
+    }
+
+    .video-wrapper video {
+      width: 100%;
+      display: block;
+      max-height: 450px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+      padding: 0.7rem 1.2rem;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-secondary:hover { background: #252540; border-color: #6c5ce7; }
+
+    #m3u8Info {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #0a0a0f;
+      border-radius: 8px;
+      word-break: break-all;
+      font-size: 0.8rem;
+      color: #888;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    #m3u8Info.hidden { display: none; }
+
+    /* ── A/B test variants ── */
+    #variantsContainer.hidden { display: none; }
+
+    .variant-card {
+      background: #12121a;
+      border: 1px solid #2a2a3a;
+      border-radius: 14px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .variant-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+    }
+
+    .variant-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .variant-letter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #6c5ce7;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .variant-title {
+      font-weight: 600;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+
+    .variant-weight-info {
+      color: #666;
+      font-size: 0.75rem;
+      font-style: italic;
+    }
+
+    .variant-video-wrapper {
+      border-radius: 10px;
+      overflow: hidden;
+      background: #000;
+      margin-bottom: 0.8rem;
+    }
+
+    .variant-video {
+      width: 100%;
+      display: block;
+      max-height: 400px;
+    }
+
+    .variant-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.6rem;
+    }
+
+    .variant-m3u8-url {
+      font-size: 0.7rem;
+      color: #555;
+      word-break: break-all;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    /* ── Download progress ── */
+    #downloadProgress {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #1a1a2e;
+      border-radius: 8px;
+    }
+
+    #downloadProgress.hidden { display: none; }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #2a2a3a;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #6c5ce7;
+      border-radius: 3px;
+      transition: width 0.3s;
+      width: 0%;
+    }
+
+    #progressText {
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+
+    /* ── Manual section ── */
+    .manual-section {
+      margin-top: 2.5rem;
+      padding: 1.5rem;
+      background: #12121a;
+      border: 1px solid #1a1a2e;
+      border-radius: 14px;
+    }
+
+    .manual-section h3 {
+      font-size: 0.95rem;
+      color: #fff;
+      margin-bottom: 0.8rem;
+    }
+
+    .manual-section ol {
+      padding-left: 1.2rem;
+      font-size: 0.85rem;
+      color: #999;
+      line-height: 1.7;
+    }
+
+    .manual-section code {
+      background: #0a0a0f;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: #6c5ce7;
+    }
+
+    @media (max-width: 600px) {
+      .input-group { flex-direction: column; }
+      .container { padding: 1.5rem 1rem; }
+      header h1 { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><span>VTurb</span> Downloader</h1>
+      <p>Cole a URL da pagina de oferta e extraia o video automaticamente</p>
+    </header>
+
+    <div class="input-group">
+      <input type="text" id="videoUrl" placeholder="Cole aqui a URL da pagina com o video VTurb..." autocomplete="off">
+      <button class="btn-primary" id="btnAnalyze" onclick="analyzeVideo()">Analisar</button>
+    </div>
+
+    <div id="status" class="status hidden"></div>
+
+    <div id="resultSection" class="hidden">
+      <!-- A/B test: multiple variant cards -->
+      <div id="variantsContainer" class="hidden"></div>
+
+      <!-- Single video view -->
+      <div id="singleVideoSection">
+        <div class="video-wrapper">
+          <video id="videoPlayer" controls playsinline></video>
+        </div>
+
+        <div class="actions">
+          <button class="btn-primary" onclick="downloadVideo()">Baixar Video</button>
+          <button class="btn-secondary" onclick="copyM3U8()">Copiar URL M3U8</button>
+          <button class="btn-secondary" onclick="copyFfmpeg()">Copiar comando ffmpeg</button>
+        </div>
+
+        <div id="m3u8Info" class="hidden">
+          <code id="m3u8Url"></code>
+        </div>
+      </div>
+
+      <div id="downloadProgress" class="hidden">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div id="progressText"></div>
+      </div>
+    </div>
+
+    <div class="manual-section">
+      <h3>Se a extracao automatica nao funcionar:</h3>
+      <ol>
+        <li>Abra a pagina da oferta no Chrome</li>
+        <li>Pressione <code>F12</code> para abrir o DevTools</li>
+        <li>Va na aba <code>Network</code> e filtre por <code>.m3u8</code></li>
+        <li>De play no video e copie a URL M3U8 que aparecer</li>
+        <li>Cole a URL M3U8 diretamente aqui no campo acima</li>
+      </ol>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="app.js"></script>
+</body>
+</html>
